@@ -1,0 +1,338 @@
+phases:
+  process-booking:
+    mode: agent
+    agent: booking-processor
+    directive: |
+      Process the incoming cargo booking from data/booking-request.json.
+
+      Steps:
+      1. Read data/booking-request.json
+      2. Validate each consignment:
+         - Verify required fields: AWB, pieces, description, commodity_code, gross_weight_kg, dimensions_cm
+         - Calculate volumetric weight: (l × w × h cm³) / 6000 = vol weight kg
+         - Calculate chargeable weight: max(gross_weight_kg, volumetric_weight_kg)
+         - Assign missing SHC codes based on commodity descriptions and codes:
+           * Lithium batteries (HS 850760): add ELI, mark as CAO if >35kg
+           * Flammable liquids (HS 330300, 330400): add RFL, DGR
+           * Heavy cargo >150kg per piece: add HEA
+      3. Flag consignments requiring DG classification (lithium batteries, perfumes/flammables)
+      4. Write validated-booking.json with all fields enriched
+
+      Output validated-booking.json structure:
+      {
+        "booking_id": "...",
+        "flight": "...",
+        "aircraft_type": "...",
+        "route": "...",
+        "departure": "...",
+        "shipper": {...},
+        "consignments": [
+          {
+            "awb": "...",
+            "pieces": N,
+            "description": "...",
+            "commodity_code": "...",
+            "gross_weight_kg": N,
+            "volumetric_weight_kg": N,
+            "chargeable_weight_kg": N,
+            "dimensions_cm": {...},
+            "special_handling": [...],
+            "requires_dg_classification": true/false,
+            "declared_value_usd": N
+          }
+        ],
+        "total_pieces": N,
+        "total_gross_weight_kg": N,
+        "total_chargeable_weight_kg": N,
+        "dg_items_count": N,
+        "validation_status": "accepted",
+        "validated_at": "ISO timestamp"
+      }
+    capabilities:
+      mutates_state: true
+      writes_files: true
+
+  classify-dg:
+    mode: agent
+    agent: dg-classifier
+    directive: |
+      Classify all dangerous goods items from the validated booking.
+
+      Steps:
+      1. Read data/validated-booking.json — find all consignments where requires_dg_classification = true
+      2. Read data/iata-dgr-reference.json for classification reference data
+      3. For each DG consignment, determine:
+         - UN number (look up by commodity code, description, and SHC codes)
+         - Proper shipping name per IATA DGR
+         - Hazard class and division
+         - Packing group (I/II/III)
+         - Required labels
+         - Packing instruction (PI) for cargo aircraft
+         - Quantity per package and total net quantity
+         - Quantity limits: does the shipment exceed cargo aircraft limits?
+         - Segregation group (for compatibility checking)
+      4. Apply segregation rules from iata-dgr-reference.json between DG items
+      5. Determine overall verdict:
+         - "advance": all DG items classified and acceptable
+         - "rework": missing MSDS data or UN number cannot be determined — shipper must provide more info
+         - "fail": forbidden dangerous goods (e.g., forbidden explosives, radioactive material over limits)
+      6. Write data/dg-classification.json with full classification results
+
+      dg-classification.json structure:
+      {
+        "booking_id": "...",
+        "classified_at": "ISO timestamp",
+        "consignments": [
+          {
+            "awb": "...",
+            "is_dg": true/false,
+            "un_number": "UN3481" or null,
+            "proper_shipping_name": "...",
+            "class": "9" or null,
+            "packing_group": "II" or null,
+            "labels": [...],
+            "packing_instruction": "PI 966 Section II" or null,
+            "net_quantity_kg": N,
+            "cargo_limit_kg": N,
+            "within_cargo_limits": true/false,
+            "segregation_group": "...",
+            "restrictions": "...",
+            "acceptable": true/false
+          }
+        ],
+        "segregation_conflicts": [...],
+        "overall_status": "acceptable/restricted/forbidden"
+      }
+    capabilities:
+      mutates_state: true
+      writes_files: true
+    decision_contract:
+      required_fields: [verdict, reasoning, dg_class, un_number, packing_group, restrictions]
+
+  calculate-load-plan:
+    mode: agent
+    agent: load-planner
+    directive: |
+      Calculate the optimal load plan for this cargo booking.
+
+      Steps:
+      1. Read data/validated-booking.json, data/dg-classification.json, data/aircraft-specs.json
+      2. Group consignments into ULDs:
+         - Heavy cargo (HEA) → main deck positions (ML1-MR3, MC1-MC5)
+         - DG Class 3 (flammable) → lower aft, away from Class 9 lithium if possible
+         - DG Class 9 (lithium) → main deck or lower forward
+         - Standard cargo → fill remaining positions
+         - Bulk (loose) → max 2000kg, use for small/odd pieces
+      3. Apply DG segregation rules from dg-classification.json segregation_conflicts
+         - If conflict exists and cannot be resolved by positioning → return rework verdict
+      4. Calculate CG moments for the load:
+         - Main deck datum arms (meters from nose datum):
+           ML1/MR1: 21.0m, ML2/MR2: 23.5m, ML3/MR3: 26.0m
+           MC1: 28.5m, MC2: 31.0m, MC3: 33.5m, MC4: 36.0m, MC5: 38.5m
+         - Lower forward: LF1: 15.0m, LF2: 17.5m, LF3: 20.0m, LF4: 22.5m
+         - Lower aft: LA1: 35.0m, LA2: 37.5m, LA3: 40.0m, LA4: 42.5m, LA5: 45.0m
+         - Bulk: BLK: 48.0m
+         - MAC datum: 21.0m, MAC length: 9.0m
+      5. Verify each ULD position weight ≤ max_uld_weight_kg for that compartment
+      6. Write data/load-plan.json
+
+      Verdict:
+      - "advance": load plan created, CG within envelope, no segregation conflicts
+      - "rework": DG segregation conflict — return to classify-dg for resolution
+    capabilities:
+      mutates_state: true
+      writes_files: true
+    decision_contract:
+      required_fields: [verdict, reasoning, total_weight_kg, cg_position, within_envelope]
+
+  run-weight-balance:
+    mode: command
+    command:
+      program: python3
+      args: ["scripts/weight-balance.py"]
+      cwd_mode: project_root
+      timeout_secs: 30
+    directive: |
+      Run the weight and balance calculation script to validate the load plan.
+      Script reads data/load-plan.json and data/aircraft-specs.json.
+      Outputs data/weight-balance-result.json with ZFW, TOW, and CG calculations.
+
+  run-capacity-check:
+    mode: command
+    command:
+      program: bash
+      args: ["scripts/capacity-check.sh"]
+      cwd_mode: project_root
+      timeout_secs: 15
+    directive: |
+      Run the capacity check script to verify compartment volume utilization.
+      Script reads aircraft-specs.json and load-plan.json using jq.
+      Outputs pass/fail with utilization percentages to stdout.
+
+  validate-compliance:
+    mode: agent
+    agent: compliance-checker
+    directive: |
+      Perform final compliance validation before issuing departure clearance.
+
+      Steps:
+      1. Read data/load-plan.json, data/weight-balance-result.json (if available),
+         data/aircraft-specs.json, data/dg-classification.json, data/compliance-result.json
+      2. Run through the complete compliance checklist:
+
+         STRUCTURAL LIMITS:
+         □ Total payload (6,780 kg) ≤ max_structural_payload_kg (102,010 kg)
+         □ ZFW = OEW + payload ≤ MZFW (if defined, else check TOW)
+         □ TOW = ZFW + planned fuel ≤ MTOW (347,452 kg)
+
+         VOLUME:
+         □ Main deck cargo volume ≤ 386 m³
+         □ Lower forward volume ≤ 42 m³
+         □ Lower aft volume ≤ 53 m³
+         □ Bulk volume ≤ 14 m³
+
+         ULD WEIGHTS:
+         □ Each main deck PMC position ≤ 6,804 kg
+         □ Each LD3 position (lower fwd/aft) ≤ 1,588 kg
+         □ Bulk ≤ 2,000 kg
+
+         WEIGHT & BALANCE:
+         □ CG position within 14–33% MAC envelope
+         □ Moment arms balanced for safe operation
+
+         DG:
+         □ No segregation conflicts in final positions
+         □ DG quantities within cargo aircraft limits
+         □ CAO-only items confirmed on cargo-only flight
+
+      3. Write data/compliance-result.json with finding for each check item
+      4. Verdict:
+         - "advance": all checks pass — issue CLEARED status
+         - "rework": load is within limits but CG or volume is >90% — recommend rebalancing
+         - "fail": any hard limit exceeded — cannot depart as planned
+
+      compliance-result.json:
+      {
+        "booking_id": "...",
+        "validated_at": "ISO timestamp",
+        "status": "CLEARED/MARGINAL/EXCEEDS_LIMITS",
+        "checks": {
+          "payload_pct": 6.6,
+          "payload_status": "PASS",
+          "volume_main_deck_pct": N,
+          "volume_main_deck_status": "PASS/FAIL",
+          ...
+          "cg_pct_mac": 24.8,
+          "cg_status": "PASS"
+        },
+        "limiting_factor": null or "PAYLOAD/VOLUME/CG/ULD_WEIGHT",
+        "cleared_for_departure": true/false
+      }
+    capabilities:
+      mutates_state: true
+      writes_files: true
+    decision_contract:
+      required_fields: [verdict, reasoning, payload_pct, volume_pct, limiting_factor]
+
+  generate-manifest:
+    mode: agent
+    agent: manifest-generator
+    directive: |
+      Generate the complete departure documentation package.
+
+      Read: data/validated-booking.json, data/dg-classification.json,
+            data/load-plan.json, data/compliance-result.json
+
+      Create three documents:
+
+      1. documents/cargo-manifest.md
+         Header: CARGO MANIFEST — [FLIGHT] [DATE] [ROUTE]
+         Aircraft: [TYPE] [REGISTRATION]
+         Table columns: AWB | Pieces | Gross Wt (kg) | Dimensions (cm) | Commodity | SHC Codes
+         Footer: Totals row, Operator signature block, Agent certification
+
+      2. documents/dg-declaration.md (only if DG items exist)
+         SHIPPER'S DECLARATION FOR DANGEROUS GOODS (IATA format)
+         For each DG item:
+           - UN number and proper shipping name
+           - Class/Division and Packing Group
+           - Quantity and type of packing
+           - Net quantity per package
+           - Packing instruction reference
+         Shipper certification: "I hereby declare that..."
+         Note any CAO-only restrictions prominently
+
+      3. documents/notoc.md
+         NOTIFICATION TO CAPTAIN — [FLIGHT] [DATE]
+         Section A: Dangerous Goods
+           Table: Position | UN No. | Description | Class | Qty | Remarks
+         Section B: Other Special Loads
+           List HEA positions, any other special cargo
+         Captain acknowledgment signature block
+
+      Make all documents professionally formatted in markdown with clear headers,
+      tables, and signature blocks. These are regulatory documents.
+    capabilities:
+      mutates_state: true
+      writes_files: true
+
+  generate-dashboard:
+    mode: agent
+    agent: ops-dashboard
+    directive: |
+      Generate the operations dashboard for this cargo booking.
+
+      Read all data files in the data/ directory and all generated documents.
+
+      Produce reports/ops-dashboard.md with:
+
+      ## CARGO OPS DASHBOARD — [FLIGHT] [DATE]
+      *Generated: [timestamp]*
+
+      ### Departure Status
+      | Item | Status |
+      |------|--------|
+      | Departure Readiness | GO / NO-GO |
+      | Cargo Manifest | COMPLETE |
+      | DG Declaration | COMPLETE / N/A |
+      | NOTOC | COMPLETE / N/A |
+      | Weight & Balance | CLEARED |
+
+      ### Load Summary
+      | Metric | Value | Limit | Utilization |
+      |--------|-------|-------|-------------|
+      | Total Payload | X kg | 102,010 kg | X% |
+      | Main Deck Volume | X m³ | 386 m³ | X% |
+      | Lower Forward Volume | X m³ | 42 m³ | X% |
+      | Lower Aft Volume | X m³ | 53 m³ | X% |
+      | CG Position | X% MAC | 14-33% | WITHIN LIMITS |
+
+      ### Dangerous Goods Summary
+      | AWB | UN No. | Description | Class | Qty (kg) | Position |
+      |-----|--------|-------------|-------|----------|----------|
+      ...
+
+      ### Revenue Metrics
+      | Consignment | Gross Wt | Chargeable Wt | Commodity |
+      ...
+      | **TOTAL** | X kg | X kg | — |
+
+      ### ULD Position Map
+      ASCII diagram of main deck and lower deck positions with weights
+
+      ### Exceptions
+      List any rejected items, holds, or items requiring follow-up
+
+      Keep the dashboard actionable and concise — ops managers need to make go/no-go
+      decisions quickly. Green/amber/red status indicators using emoji or ASCII.
+    capabilities:
+      mutates_state: true
+      writes_files: true
+
+  reject-cargo:
+    mode: command
+    command:
+      program: bash
+      args: ["-c", "python3 -c \"\nimport json, datetime, sys\n\nrejection = {\n  'booking_id': 'see validated-booking.json',\n  'rejected_at': datetime.datetime.utcnow().isoformat() + 'Z',\n  'reason': 'Cargo rejected by automated compliance check. See dg-classification.json or compliance-result.json for details.',\n  'action_required': 'Contact shipper with rejection notice. Review compliance-result.json for specific failure reason.'\n}\n\nwith open('data/rejection-log.json', 'w') as f:\n  json.dump(rejection, f, indent=2)\n\nprint('Cargo rejection logged to data/rejection-log.json')\n\""]
+      cwd_mode: project_root
+      timeout_secs: 10

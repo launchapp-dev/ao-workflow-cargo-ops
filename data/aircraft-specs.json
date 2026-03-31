@@ -1,0 +1,69 @@
+{
+  "aircraft_type": "B777-200F",
+  "registration": "N-AO777",
+  "mtow_kg": 347452,
+  "oew_kg": 144400,
+  "max_payload_kg": 102010,
+  "max_zero_fuel_weight_kg": 247838,
+  "max_fuel_kg": 145540,
+  "max_structural_payload_kg": 102010,
+  "compartments": {
+    "main_deck": {
+      "positions": ["ML1", "ML2", "ML3", "MR1", "MR2", "MR3", "MC1", "MC2", "MC3", "MC4", "MC5"],
+      "uld_type": "PMC",
+      "max_uld_weight_kg": 6804,
+      "total_volume_m3": 386,
+      "max_floor_load_kg_m2": 1220,
+      "datum_arms_m": {
+        "ML1": 21.0, "MR1": 21.0,
+        "ML2": 23.5, "MR2": 23.5,
+        "ML3": 26.0, "MR3": 26.0,
+        "MC1": 28.5,
+        "MC2": 31.0,
+        "MC3": 33.5,
+        "MC4": 36.0,
+        "MC5": 38.5
+      }
+    },
+    "lower_forward": {
+      "positions": ["LF1", "LF2", "LF3", "LF4"],
+      "uld_type": "LD3",
+      "max_uld_weight_kg": 1588,
+      "total_volume_m3": 42,
+      "max_floor_load_kg_m2": 732,
+      "datum_arms_m": {
+        "LF1": 15.0, "LF2": 17.5, "LF3": 20.0, "LF4": 22.5
+      }
+    },
+    "lower_aft": {
+      "positions": ["LA1", "LA2", "LA3", "LA4", "LA5"],
+      "uld_type": "LD3",
+      "max_uld_weight_kg": 1588,
+      "total_volume_m3": 53,
+      "max_floor_load_kg_m2": 732,
+      "datum_arms_m": {
+        "LA1": 35.0, "LA2": 37.5, "LA3": 40.0, "LA4": 42.5, "LA5": 45.0
+      }
+    },
+    "bulk": {
+      "positions": ["BLK"],
+      "uld_type": "loose",
+      "max_weight_kg": 2000,
+      "total_volume_m3": 14,
+      "datum_arms_m": {
+        "BLK": 48.0
+      }
+    }
+  },
+  "cg_limits": {
+    "forward_limit_pct_mac": 14.0,
+    "aft_limit_pct_mac": 33.0,
+    "optimal_cg_pct_mac": 25.0,
+    "mac_datum_m": 21.0,
+    "mac_length_m": 9.0
+  },
+  "fuel_burn_estimate_kg_hr": 7800,
+  "flight_time_hr": 7.5,
+  "planned_fuel_kg": 58500,
+  "crew_and_equipment_kg": 800
+}

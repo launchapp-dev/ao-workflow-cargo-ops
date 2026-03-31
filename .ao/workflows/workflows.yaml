@@ -1,0 +1,72 @@
+default_workflow_ref: process-cargo-booking
+
+workflows:
+  - id: process-cargo-booking
+    name: "Process Cargo Booking"
+    description: "Full air cargo processing pipeline — booking intake through departure documentation"
+    phases:
+      - process-booking
+      - classify-dg:
+          on_verdict:
+            rework:
+              target: process-booking
+            fail:
+              target: reject-cargo
+          max_rework_attempts: 2
+      - calculate-load-plan:
+          on_verdict:
+            rework:
+              target: classify-dg
+          max_rework_attempts: 2
+      - run-weight-balance
+      - validate-compliance:
+          on_verdict:
+            rework:
+              target: calculate-load-plan
+            fail:
+              target: reject-cargo
+          max_rework_attempts: 2
+      - generate-manifest
+      - generate-dashboard
+    post_success:
+      merge:
+        strategy: squash
+        target_branch: main
+        create_pr: true
+        auto_merge: true
+        cleanup_worktree: true
+
+  - id: daily-load-planning
+    name: "Daily Load Planning Run"
+    description: "Processes all pending bookings for today's departures — runs at 04:00 UTC"
+    phases:
+      - process-booking
+      - classify-dg:
+          on_verdict:
+            rework:
+              target: process-booking
+            fail:
+              target: reject-cargo
+          max_rework_attempts: 2
+      - calculate-load-plan:
+          on_verdict:
+            rework:
+              target: classify-dg
+          max_rework_attempts: 2
+      - run-weight-balance
+      - validate-compliance:
+          on_verdict:
+            rework:
+              target: calculate-load-plan
+            fail:
+              target: reject-cargo
+          max_rework_attempts: 2
+      - generate-manifest
+      - generate-dashboard
+
+  - id: weekly-capacity-analysis
+    name: "Weekly Fleet Capacity Analysis"
+    description: "Generates weekly fleet utilization and capacity report — runs Mondays at 08:00 UTC"
+    phases:
+      - run-capacity-check
+      - generate-dashboard

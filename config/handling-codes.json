@@ -1,0 +1,118 @@
+{
+  "special_handling_codes": {
+    "AVI": {
+      "code": "AVI",
+      "name": "Live Animals",
+      "description": "Live animals requiring specific temperature and ventilation",
+      "documentation": ["CITES permit if applicable", "Veterinary health certificate", "Species declaration"],
+      "storage": "Isolated from DG, temperature-controlled",
+      "priority": "high"
+    },
+    "CAO": {
+      "code": "CAO",
+      "name": "Cargo Aircraft Only",
+      "description": "Dangerous goods only permitted on all-cargo aircraft",
+      "documentation": ["DG declaration", "Shipper's certification"],
+      "storage": "Per IATA DGR packing instructions",
+      "priority": "normal"
+    },
+    "DGR": {
+      "code": "DGR",
+      "name": "Dangerous Goods",
+      "description": "General dangerous goods requiring IATA DGR documentation",
+      "documentation": ["Shipper's Declaration for DG", "MSDS if applicable"],
+      "storage": "Per class and packing group",
+      "priority": "high"
+    },
+    "ELI": {
+      "code": "ELI",
+      "name": "Lithium Batteries",
+      "description": "Lithium ion or lithium metal batteries (standalone or packed with equipment)",
+      "documentation": ["Lithium battery test summary (UN 38.3)", "Class 9 lithium battery label"],
+      "storage": "Protected from damage, state of charge ≤30% for Section II",
+      "priority": "high"
+    },
+    "HEA": {
+      "code": "HEA",
+      "name": "Heavy Cargo",
+      "description": "Single piece exceeding 150kg — requires special handling equipment",
+      "documentation": ["Dimensions and weight declaration"],
+      "storage": "Main deck preferred, near CG, no stacking above",
+      "priority": "normal"
+    },
+    "HUM": {
+      "code": "HUM",
+      "name": "Human Remains",
+      "description": "Human remains — embalmed or cremated",
+      "documentation": ["Death certificate", "Embalming certificate or cremation certificate", "Transit permit"],
+      "storage": "Isolated, refrigerated if unembalmed",
+      "priority": "high"
+    },
+    "ICE": {
+      "code": "ICE",
+      "name": "Dry Ice",
+      "description": "Carbon dioxide solid (dry ice) — UN 1845, Class 9, PG III",
+      "documentation": ["DG declaration for UN 1845"],
+      "storage": "Ventilated area, not in sealed compartment",
+      "priority": "normal"
+    },
+    "PER": {
+      "code": "PER",
+      "name": "Perishable Goods",
+      "description": "Temperature-sensitive goods with limited shelf life",
+      "documentation": ["Temperature range specification", "Time-sensitivity declaration"],
+      "storage": "Temperature-controlled per shipper specification",
+      "priority": "high"
+    },
+    "RFL": {
+      "code": "RFL",
+      "name": "Reportable Flammable Liquid",
+      "description": "Flammable liquid (Class 3) requiring DG documentation",
+      "documentation": ["Shipper's Declaration for DG", "Class 3 flammable liquid label"],
+      "storage": "Segregated from oxidizers and ignition sources",
+      "priority": "high"
+    },
+    "VAL": {
+      "code": "VAL",
+      "name": "Valuable Cargo",
+      "description": "Declared value exceeding USD 1,000 per kg",
+      "documentation": ["Commercial invoice", "High value declaration"],
+      "storage": "Secured, limited access, manifest with declared values",
+      "priority": "high"
+    }
+  },
+  "uld_types": {
+    "PMC": {
+      "code": "PMC",
+      "name": "96/125 Pallet with Net",
+      "dimensions_cm": {"l": 317, "w": 244, "h": 163},
+      "max_gross_weight_kg": 6804,
+      "volume_m3": 11.5,
+      "compatible_aircraft": ["B747", "B777", "B767"]
+    },
+    "LD3": {
+      "code": "LD3",
+      "name": "LD3 Container",
+      "dimensions_cm": {"l": 153, "w": 200, "h": 163},
+      "max_gross_weight_kg": 1588,
+      "volume_m3": 4.5,
+      "compatible_aircraft": ["B747", "B777", "A330", "B767"]
+    },
+    "LD7": {
+      "code": "LD7",
+      "name": "LD7 Container",
+      "dimensions_cm": {"l": 318, "w": 224, "h": 163},
+      "max_gross_weight_kg": 4626,
+      "volume_m3": 10.8,
+      "compatible_aircraft": ["B747", "B777"]
+    },
+    "AKE": {
+      "code": "AKE",
+      "name": "LD3 Lightweight Container",
+      "dimensions_cm": {"l": 153, "w": 200, "h": 163},
+      "max_gross_weight_kg": 1588,
+      "volume_m3": 4.3,
+      "compatible_aircraft": ["B747", "B777", "A330", "B767", "A320"]
+    }
+  }
+}

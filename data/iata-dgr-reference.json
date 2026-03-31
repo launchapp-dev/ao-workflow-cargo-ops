@@ -1,0 +1,148 @@
+{
+  "edition": "IATA DGR 65th Edition (2024)",
+  "classifications": [
+    {
+      "un_number": "UN3481",
+      "proper_shipping_name": "Lithium ion batteries packed with equipment",
+      "class": "9",
+      "subsidiary_risk": null,
+      "packing_group": "II",
+      "labels": ["Class 9", "Lithium Battery"],
+      "passenger_limit_kg": 5,
+      "cargo_limit_kg": 35,
+      "net_quantity_per_package_kg": 5,
+      "special_provisions": ["A99", "A154", "A164", "A183"],
+      "packing_instructions": {
+        "cargo": "PI 966 Section II",
+        "passenger": "PI 967 Section II"
+      },
+      "forbidden_passenger": false,
+      "forbidden_cargo": false,
+      "segregation_group": "lithium_batteries",
+      "notes": "State of charge must not exceed 30% for Section II. Mark with lithium battery handling label."
+    },
+    {
+      "un_number": "UN3480",
+      "proper_shipping_name": "Lithium ion batteries",
+      "class": "9",
+      "subsidiary_risk": null,
+      "packing_group": "II",
+      "labels": ["Class 9", "Lithium Battery"],
+      "passenger_limit_kg": 0,
+      "cargo_limit_kg": 35,
+      "net_quantity_per_package_kg": 35,
+      "special_provisions": ["A88", "A99", "A154", "A164", "A183", "A206"],
+      "packing_instructions": {
+        "cargo": "PI 965 Section II",
+        "passenger": "FORBIDDEN"
+      },
+      "forbidden_passenger": true,
+      "forbidden_cargo": false,
+      "segregation_group": "lithium_batteries",
+      "notes": "Forbidden on passenger aircraft. CAO only."
+    },
+    {
+      "un_number": "UN1197",
+      "proper_shipping_name": "Extracts, flavouring, liquid (ethanol-based)",
+      "class": "3",
+      "subsidiary_risk": null,
+      "packing_group": "III",
+      "labels": ["Flammable Liquid"],
+      "passenger_limit_kg": 60,
+      "cargo_limit_kg": 220,
+      "net_quantity_per_package_kg": 60,
+      "special_provisions": [],
+      "packing_instructions": {
+        "cargo": "PI 309",
+        "passenger": "PI 305"
+      },
+      "forbidden_passenger": false,
+      "forbidden_cargo": false,
+      "segregation_group": "flammable_liquids_class3",
+      "notes": "Flashpoint above 23°C. Packing Group III applies to most perfume/fragrance formulations."
+    },
+    {
+      "un_number": "UN1993",
+      "proper_shipping_name": "Flammable liquid, n.o.s.",
+      "class": "3",
+      "subsidiary_risk": null,
+      "packing_group": "III",
+      "labels": ["Flammable Liquid"],
+      "passenger_limit_kg": 60,
+      "cargo_limit_kg": 220,
+      "net_quantity_per_package_kg": 60,
+      "special_provisions": ["A3", "A72"],
+      "packing_instructions": {
+        "cargo": "PI 309",
+        "passenger": "PI 305"
+      },
+      "forbidden_passenger": false,
+      "forbidden_cargo": false,
+      "segregation_group": "flammable_liquids_class3",
+      "notes": "Generic entry for flammable liquids not otherwise specified."
+    },
+    {
+      "un_number": "UN1072",
+      "proper_shipping_name": "Oxygen, compressed",
+      "class": "2",
+      "subsidiary_risk": "5.1",
+      "division": "2.2",
+      "packing_group": null,
+      "labels": ["Non-Flammable Gas", "Oxidizing"],
+      "passenger_limit_kg": 75,
+      "cargo_limit_kg": 150,
+      "special_provisions": [],
+      "packing_instructions": {
+        "cargo": "PI 200",
+        "passenger": "PI 200"
+      },
+      "forbidden_passenger": false,
+      "forbidden_cargo": false,
+      "segregation_group": "oxidizers",
+      "notes": "Cylinder must be within 5-year hydrostatic test date."
+    }
+  ],
+  "segregation_rules": [
+    {
+      "class_a": "3",
+      "class_b": "5.1",
+      "rule": "forbidden",
+      "description": "Flammable liquids and oxidizers must not be transported together"
+    },
+    {
+      "class_a": "3",
+      "class_b": "1",
+      "rule": "forbidden",
+      "description": "Flammable liquids and explosives must not be transported together"
+    },
+    {
+      "class_a": "3",
+      "class_b": "9",
+      "rule": "allowed_with_separation",
+      "description": "Flammable liquids and Class 9 (lithium batteries) allowed with 1m separation"
+    },
+    {
+      "class_a": "9",
+      "class_b": "9",
+      "rule": "allowed",
+      "description": "Class 9 items may be co-loaded without restriction"
+    },
+    {
+      "group_a": "lithium_batteries",
+      "group_b": "flammable_liquids_class3",
+      "rule": "allowed_with_separation",
+      "description": "Lithium batteries and flammable liquids allowed with documented separation in load plan"
+    }
+  ],
+  "special_handling_codes": {
+    "ELI": "Lithium batteries — requires Class 9 lithium battery label",
+    "CAO": "Cargo aircraft only — not permitted on passenger aircraft",
+    "RFL": "Reportable flammable liquid — Class 3 DG",
+    "HEA": "Heavy cargo — single piece exceeds 150kg",
+    "PER": "Perishable goods — temperature sensitive",
+    "DGR": "Dangerous goods — requires full DGR documentation",
+    "AOG": "Aircraft on ground — highest priority shipment",
+    "AVI": "Live animals — special care required",
+    "VAL": "Valuable cargo — declared value >USD 1000/kg"
+  }
+}

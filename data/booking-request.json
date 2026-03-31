@@ -1,0 +1,57 @@
+{
+  "booking_id": "CG-2026-0331-001",
+  "flight": "AO-7742",
+  "aircraft_type": "B777-200F",
+  "route": "JFK → FRA",
+  "departure": "2026-04-01T08:30Z",
+  "shipper": {
+    "name": "Precision Electronics Corp",
+    "iata_code": "PEC",
+    "account": "PEC-4421"
+  },
+  "consignments": [
+    {
+      "awb": "125-44782910",
+      "pieces": 12,
+      "description": "Lithium-ion batteries (packed with equipment)",
+      "commodity_code": "850760",
+      "gross_weight_kg": 840,
+      "dimensions_cm": {"l": 120, "w": 80, "h": 60},
+      "special_handling": ["ELI", "CAO"],
+      "declared_value_usd": 125000
+    },
+    {
+      "awb": "125-44782911",
+      "pieces": 48,
+      "description": "Consumer electronics (smartphones)",
+      "commodity_code": "851712",
+      "gross_weight_kg": 2160,
+      "dimensions_cm": {"l": 60, "w": 40, "h": 40},
+      "special_handling": [],
+      "declared_value_usd": 890000
+    },
+    {
+      "awb": "125-44782912",
+      "pieces": 6,
+      "description": "Perfume samples containing ethanol",
+      "commodity_code": "330300",
+      "gross_weight_kg": 180,
+      "dimensions_cm": {"l": 60, "w": 40, "h": 30},
+      "special_handling": ["RFL"],
+      "declared_value_usd": 15000
+    },
+    {
+      "awb": "125-44782913",
+      "pieces": 24,
+      "description": "Automotive spare parts (non-hazardous)",
+      "commodity_code": "870899",
+      "gross_weight_kg": 3600,
+      "dimensions_cm": {"l": 100, "w": 80, "h": 80},
+      "special_handling": ["HEA"],
+      "declared_value_usd": 67000
+    }
+  ],
+  "total_pieces": 90,
+  "total_gross_weight_kg": 6780,
+  "priority": "general"
+}

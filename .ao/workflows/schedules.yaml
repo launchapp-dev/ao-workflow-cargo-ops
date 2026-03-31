@@ -1,0 +1,10 @@
+schedules:
+  - id: daily-load-planning
+    cron: "0 4 * * *"
+    workflow_ref: daily-load-planning
+    enabled: true
+
+  - id: weekly-capacity-analysis
+    cron: "0 8 * * 1"
+    workflow_ref: weekly-capacity-analysis
+    enabled: true
